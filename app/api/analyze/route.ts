@@ -1,9 +1,9 @@
 // File: app/api/analyze/route.ts
-// v1.4: Swapped Gemini API for OpenAI API for AI analysis.
+// v1.5: Fixed TypeScript 'any' types and unused variables to pass Vercel's strict build process.
 
 import { NextRequest, NextResponse } from 'next/server';
 import crypto from 'crypto';
-import { supabase } from '@/lib/supabaseClient'; // Import our Supabase client
+import { supabase } from '@/lib/supabaseClient';
 
 // --- Rate Limiting (In-Memory for MVP) ---
 const rateLimitStore: Record<string, { count: number; expiry: number }> = {};
@@ -11,8 +11,8 @@ const RATE_LIMIT_COUNT = 10;
 const RATE_LIMIT_WINDOW = 60 * 1000;
 
 // --- The AI Analysis Function (Now using OpenAI) ---
-async function analyzeTextWithAI(text: string): Promise<any> {
-  const apiKey = process.env.OPENAI_API_KEY; // IMPORTANT: Using the OpenAI key from environment variables
+async function analyzeTextWithAI(text: string): Promise<Record<string, unknown>> { // FIXED: Specified a more concrete return type than 'any'
+  const apiKey = process.env.OPENAI_API_KEY;
   if (!apiKey) {
     throw new Error("OpenAI API key is not configured.");
   }
@@ -21,21 +21,20 @@ async function analyzeTextWithAI(text: string): Promise<any> {
 
   const systemPrompt = `You are an expert product analyst. Your job is to analyze raw user feedback and categorize it. Analyze the following text and return a structured JSON object. Your response MUST be a valid JSON object. For each distinct piece of feedback, provide: a 'category' (e.g., 'Bug Report', 'Feature Request', 'UI/UX Complaint', 'Positive Feedback'), a 'sentiment' ('Positive', 'Negative', 'Neutral'), a one-sentence 'summary', and the original 'quote'. Finally, provide a top-level 'overall_summary' of the key themes found in the text.`;
 
-  // The payload structure for OpenAI is different from Gemini's.
   const payload = {
-    model: "gpt-3.5-turbo-1106", // A cost-effective model that supports JSON mode
+    model: "gpt-3.5-turbo-1106",
     messages: [
       { role: "system", content: systemPrompt },
       { role: "user", content: text }
     ],
-    response_format: { type: "json_object" } // Enforce JSON output
+    response_format: { type: "json_object" }
   };
 
   const response = await fetch(apiUrl, {
     method: 'POST',
     headers: { 
       'Content-Type': 'application/json',
-      'Authorization': `Bearer ${apiKey}` // OpenAI uses a Bearer token for auth
+      'Authorization': `Bearer ${apiKey}`
     },
     body: JSON.stringify(payload)
   });
@@ -49,7 +48,6 @@ async function analyzeTextWithAI(text: string): Promise<any> {
   const result = await response.json();
   
   if (result.choices && result.choices.length > 0 && result.choices[0].message) {
-    // The response from OpenAI is a JSON string in the message content, so we parse it.
     const analysisJson = JSON.parse(result.choices[0].message.content);
     return analysisJson;
   } else {
@@ -77,7 +75,7 @@ export async function POST(req: NextRequest) {
   let body;
   try {
     body = await req.json();
-  } catch (error) {
+  } catch { // FIXED: Removed unused 'error' variable
     return NextResponse.json({ error: 'Invalid JSON body' }, { status: 400 });
   }
   const { text } = body;
@@ -123,8 +121,9 @@ export async function POST(req: NextRequest) {
     console.log(`Successfully saved new report with ID: ${newReport.id}`);
     return NextResponse.json({ jobId: newReport.id });
 
-  } catch (error: any) {
+  } catch (error) { // FIXED: Specified a general 'error' type
+    const errorMessage = error instanceof Error ? error.message : 'An unexpected error occurred.';
     console.error('Error during analysis:', error);
-    return NextResponse.json({ error: error.message || 'An unexpected error occurred.' }, { status: 500 });
+    return NextResponse.json({ error: errorMessage }, { status: 500 });
   }
 }

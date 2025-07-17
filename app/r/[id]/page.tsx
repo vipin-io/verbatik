@@ -1,11 +1,12 @@
 // File: app/r/[id]/page.tsx
-// v1.6: Final Polish. Incorporates all expert feedback for a sales-ready MVP.
+// v1.8: Final type safety fixes to resolve all build errors.
 
 'use client';
 
 import { useEffect, useState, useMemo } from 'react';
 import { supabase } from '@/lib/supabaseClient';
 import { useParams } from 'next/navigation';
+import Link from 'next/link';
 import { jsPDF } from 'jspdf';
 import 'jspdf-autotable';
 
@@ -17,9 +18,13 @@ interface FeedbackItem {
   quote: string;
 }
 
+// FIXED: Made the ReportData interface more specific to avoid 'unknown' types.
 interface ReportData {
   overall_summary: string;
-  [key: string]: any; 
+  feedback_items?: FeedbackItem[];
+  source_text?: string; // Explicitly define source_text as an optional string
+  // Added a flexible index signature for any other potential keys from the AI
+  [key: string]: unknown;
 }
 
 // --- UI COMPONENTS ---
@@ -83,8 +88,9 @@ const ReportPage = () => {
         } else {
            throw new Error('Report data is empty or invalid.');
         }
-      } catch (err: any) {
-        setError(err.message);
+      } catch (err) {
+        const errorMessage = err instanceof Error ? err.message : 'An unknown error occurred.';
+        setError(errorMessage);
       } finally {
         setLoading(false);
       }
@@ -117,8 +123,11 @@ const ReportPage = () => {
   };
   
   const highlightedSourceText = useMemo(() => {
-    if (!report?.source_text || !hoveredQuote) return report?.source_text;
-    const parts = report.source_text.split(new RegExp(`(${hoveredQuote})`, 'gi'));
+    // Ensure we have a string to work with, default to empty string if not present
+    const sourceText = typeof report?.source_text === 'string' ? report.source_text : '';
+    if (!sourceText || !hoveredQuote) return sourceText;
+    
+    const parts = sourceText.split(new RegExp(`(${hoveredQuote})`, 'gi'));
     return parts.map((part: string, index: number) => 
       part.toLowerCase() === hoveredQuote.toLowerCase() ? 
         <mark key={index} className="bg-indigo-500/50 text-white rounded">{part}</mark> : 
@@ -131,9 +140,9 @@ const ReportPage = () => {
     <div className="min-h-screen bg-gray-900 p-4 sm:p-6 md:p-8 font-sans text-white">
       <div className="max-w-4xl mx-auto">
         <header className="mb-8 flex justify-between items-center">
-           <a href="/" aria-label="Back to Home" className="text-2xl font-bold bg-gradient-to-r from-purple-400 via-indigo-400 to-cyan-400 text-transparent bg-clip-text hover:opacity-80 transition-opacity">
+           <Link href="/" aria-label="Back to Home" className="text-2xl font-bold bg-gradient-to-r from-purple-400 via-indigo-400 to-cyan-400 text-transparent bg-clip-text hover:opacity-80 transition-opacity">
             ThemeFinder
-          </a>
+          </Link>
           {report && (
             <div className="flex items-center gap-2">
               <button onClick={handleCopyLink} aria-label="Copy share link" className="flex items-center gap-2 px-3 py-2 text-sm font-medium text-gray-300 bg-gray-800/50 border border-gray-700 rounded-lg hover:bg-gray-700/50 transition-colors focus:outline-none focus:ring-2 focus:ring-indigo-500">
@@ -188,7 +197,7 @@ const ReportPage = () => {
                       </div>
                       <p className="text-gray-200 mb-2 font-medium">{item.summary}</p>
                       <blockquote className="text-gray-400 border-l-2 border-gray-600 pl-3 italic">
-                        "{item.quote}"
+                        &quot;{item.quote}&quot;
                       </blockquote>
                     </div>
                   )) : (
@@ -200,7 +209,6 @@ const ReportPage = () => {
                 </div>
               </div>
 
-              {/* REFINED: Sidebar is now sticky on larger screens */}
               <div className="lg:col-span-1 space-y-6 lg:sticky lg:top-8">
                 <div className="bg-gray-800/50 border border-gray-700 rounded-lg p-4">
                   <h3 className="font-bold text-white mb-2">Get Weekly Reports</h3>
@@ -214,13 +222,13 @@ const ReportPage = () => {
                     <h3 className="font-bold text-white">Compare Themes</h3>
                     <LockIcon />
                   </div>
-                  <p className="text-sm text-gray-400 mt-2">Compare this week's themes with historical data to track trends. (Pro Feature)</p>
-                  {/* REFINED: Tooltip clarifies the Pro feature value */}
+                  <p className="text-sm text-gray-400 mt-2">Compare this week&apos;s themes with historical data to track trends. (Pro Feature)</p>
                   <div className="absolute bottom-full mb-2 left-1/2 -translate-x-1/2 px-2 py-1 text-xs text-white bg-gray-950 rounded-md opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none">
                     Track trends week-over-week
                   </div>
                 </div>
-                {report.source_text && (
+                {/* FIXED: Conditionally render this block only if source_text exists */}
+                {report?.source_text && (
                   <div className="bg-gray-800/50 border border-gray-700 rounded-lg p-4">
                     <h3 className="font-bold text-white mb-2">Source Text</h3>
                     <p className="text-sm text-gray-400 leading-relaxed">{highlightedSourceText}</p>

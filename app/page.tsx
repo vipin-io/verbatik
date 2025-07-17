@@ -1,5 +1,5 @@
 // File: app/page.tsx
-// v1.3: Final Polish based on expert feedback.
+// v1.4: Fixed TypeScript 'any' type to pass Vercel's strict build process.
 
 'use client';
 
@@ -42,8 +42,9 @@ export default function HomePage() {
       const { jobId } = result;
       router.push(`/r/${jobId}`);
 
-    } catch (err: any) {
-      setError(err.message);
+    } catch (err) { // FIXED: Specified a general 'err' type
+      const errorMessage = err instanceof Error ? err.message : 'An unknown error occurred.';
+      setError(errorMessage);
     } finally {
       setIsLoading(false);
     }
@@ -56,7 +57,6 @@ export default function HomePage() {
           <h1 className="text-5xl md:text-6xl font-bold tracking-tight bg-gradient-to-r from-purple-400 via-indigo-400 to-cyan-400 text-transparent bg-clip-text">
             Find the Signal
           </h1>
-          {/* REFINED: Sub-headline is now more direct and pain-focused */}
           <p className="mt-3 text-lg text-gray-400 max-w-xl mx-auto">
             Paste raw user feedback, messy survey responses, or App Store reviews. Get clear, actionable themes in seconds.
           </p>
@@ -68,7 +68,6 @@ export default function HomePage() {
               id="feedback-text"
               value={text}
               onChange={(e) => setText(e.target.value)}
-              // REFINED: Placeholder text now gives a clear example
               placeholder="e.g., 'I love the new dark mode, but the app crashes when I try to export a PDF...'"
               className="w-full h-64 p-4 text-gray-300 placeholder-gray-500 bg-transparent border-none resize-none focus:ring-0 focus:outline-none"
               disabled={isLoading}
