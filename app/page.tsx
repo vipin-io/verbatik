@@ -1,9 +1,9 @@
 // File: app/page.tsx
-// v2.3: Re-applied the vibrant gradient to the headline for a more dynamic feel.
+// v2.6: Implemented a professional, non-resizing loading state for a superior user experience.
 
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { Logo } from './components/Logo';
 
@@ -13,11 +13,36 @@ const PaperclipIcon = () => (
   </svg>
 );
 
+const loadingMessages = [
+  "Connecting to AI...",
+  "Analyzing themes...",
+  "Sifting through feedback...",
+  "Generating insights...",
+  "Finalizing your report...",
+];
+
 export default function HomePage() {
   const [text, setText] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [loadingMessage, setLoadingMessage] = useState('');
   const [error, setError] = useState('');
   const router = useRouter();
+
+  useEffect(() => {
+    let interval: NodeJS.Timeout;
+    if (isLoading) {
+      let messageIndex = 0;
+      setLoadingMessage(loadingMessages[messageIndex]);
+      interval = setInterval(() => {
+        messageIndex = (messageIndex + 1) % loadingMessages.length;
+        setLoadingMessage(loadingMessages[messageIndex]);
+      }, 2000);
+    } else {
+      setLoadingMessage('');
+    }
+    return () => clearInterval(interval);
+  }, [isLoading]);
+
 
   const wordCount = text.trim() === '' ? 0 : text.trim().split(/\s+/).length;
   const WORD_LIMIT = 1500;
@@ -46,34 +71,31 @@ export default function HomePage() {
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'An unknown error occurred.';
       setError(errorMessage);
-    } finally {
       setIsLoading(false);
     }
   };
 
   return (
-    // REFINED: Added a "spotlight" effect to the background for a more dynamic feel
     <div className="flex flex-col items-center justify-center min-h-screen bg-gray-900 p-4 font-sans text-white overflow-hidden">
       <div className="absolute inset-0 -z-10 h-full w-full bg-white bg-[linear-gradient(to_right,#f0f0f0_1px,transparent_1px),linear-gradient(to_bottom,#f0f0f0_1px,transparent_1px)] bg-[size:6rem_4rem] [mask-image:radial-gradient(ellipse_80%_50%_at_50%_0%,#000_70%,transparent_100%)] opacity-5"></div>
       
       <div className="w-full max-w-3xl mx-auto text-center">
-        {/* REFINED: A cleaner, more professional brand lock-up */}
-        <div className="flex items-center justify-center gap-3 mb-6">
-          <Logo />
-          <span className="text-2xl font-semibold text-gray-200">Verbatik</span>
+        <div className="flex flex-col items-center justify-center gap-2 mb-8">
+          <div className="flex items-center gap-3">
+            <Logo />
+            <span className="text-3xl font-bold text-gray-200">Verbatik</span>
+          </div>
+          <p className="text-sm text-indigo-400 font-medium">Verbatim to Value.</p>
         </div>
         
-        {/* REFINED: Headline is now a single, powerful line with the vibrant gradient */}
         <h1 className="text-4xl font-bold tracking-tighter bg-gradient-to-r from-purple-400 via-indigo-400 to-cyan-400 text-transparent bg-clip-text">
           Stop Reading. Start Understanding.
         </h1>
         
-        {/* REFINED: Sub-headline is more stylized and better spaced */}
         <p className="mt-6 text-lg text-gray-400 max-w-xl mx-auto">
           Paste raw user feedback, get a clear, actionable report in <span className="text-white">10 seconds.</span>
         </p>
 
-        {/* REFINED: Added more vertical space to let the content breathe */}
         <form onSubmit={handleSubmit} className="w-full mt-12 bg-gray-800/20 border border-gray-700/50 rounded-xl shadow-2xl p-2 transition-all duration-300 focus-within:ring-2 focus-within:ring-indigo-500 backdrop-blur-md">
           <div className="relative">
             <textarea
@@ -99,7 +121,7 @@ export default function HomePage() {
               <button
                 type="submit"
                 disabled={isLoading || text.trim() === '' || wordCount > WORD_LIMIT}
-                className="px-5 py-2 font-semibold text-white bg-indigo-600 rounded-lg shadow-lg hover:bg-indigo-700 disabled:bg-indigo-400 disabled:cursor-not-allowed transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-gray-900 focus:ring-indigo-500"
+                className="px-5 py-2 w-48 text-center font-semibold text-white bg-indigo-600 rounded-lg shadow-lg hover:bg-indigo-700 disabled:bg-indigo-400 disabled:cursor-not-allowed transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-gray-900 focus:ring-indigo-500"
               >
                 {isLoading ? (
                   <div className="flex items-center justify-center">
@@ -107,23 +129,19 @@ export default function HomePage() {
                       <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
                       <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                     </svg>
-                    Analyzing...
+                    <span>Analyzing...</span>
                   </div>
-                ) : 'Get My Insight Report'}
+                ) : 'Get Report'}
               </button>
             </div>
           </div>
         </form>
         
-        {error && (
-            <div className="mt-4 text-center p-3 bg-red-900/50 border border-red-700 rounded-lg">
-                <p className="text-red-400 font-medium">{error}</p>
-            </div>
-        )}
-
-        <p className="text-center mt-12 text-sm text-gray-500">
-            Tagline: Verbatim to Value.
-        </p>
+        {/* REFINED: Loading messages and errors now appear outside the form */}
+        <div className="mt-4 text-center h-6">
+            {isLoading && <p className="text-indigo-400 animate-pulse">{loadingMessage}</p>}
+            {error && <p className="text-red-400 font-medium">{error}</p>}
+        </div>
       </div>
     </div>
   );
