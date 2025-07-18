@@ -1,5 +1,5 @@
 // File: app/r/[id]/page.tsx
-// v2.2: Final type safety fixes to resolve all build errors.
+// v2.3: Corrected final 'any' type for jspdf-autotable to pass Vercel's strict build process.
 
 'use client';
 
@@ -19,12 +19,16 @@ interface FeedbackItem {
   quote: string;
 }
 
-// FIXED: Made the ReportData interface more specific to avoid 'unknown' types.
 interface ReportData {
   overall_summary: string | { [key: string]: string };
   feedback_items?: FeedbackItem[];
-  source_text?: string; // Explicitly define source_text as an optional string
+  source_text?: string;
   [key: string]: unknown;
+}
+
+// FIXED: Create a custom type for jsPDF with the autoTable plugin method
+interface jsPDFWithAutoTable extends jsPDF {
+  autoTable: (columns: any, data: any, options: any) => jsPDF;
 }
 
 // --- UI COMPONENTS ---
@@ -144,7 +148,7 @@ const ReportPage = () => {
 
   const handleDownloadPDF = () => {
     if (!report) return;
-    const doc = new jsPDF();
+    const doc = new jsPDF() as jsPDFWithAutoTable; // Use our custom type
     doc.setFontSize(18);
     doc.text("ThemeFinder Analysis Report", 14, 22);
     doc.setFontSize(11);
@@ -157,12 +161,12 @@ const ReportPage = () => {
         const ticketData = [ item.category, item.sentiment, item.summary, item.quote ];
         tableRows.push(ticketData);
     });
-    (doc as any).autoTable(tableColumn, tableRows, { startY: 40 });
+    
+    doc.autoTable(tableColumn, tableRows, { startY: 40 });
     doc.save(`ThemeFinder_Report_${reportId}.pdf`);
   };
   
   const highlightedSourceText = useMemo(() => {
-    // FIXED: Ensure sourceText is a string before rendering
     const sourceText = typeof report?.source_text === 'string' ? report.source_text : '';
     if (!sourceText || !hoveredQuote) return sourceText;
     
@@ -274,7 +278,6 @@ const ReportPage = () => {
                     Track trends week-over-week
                   </div>
                 </div>
-                {/* FIXED: Conditionally render this block only if source_text exists and is a string */}
                 {typeof report?.source_text === 'string' && (
                   <div className="bg-gray-800/50 border border-gray-700 rounded-lg p-4">
                     <h3 className="font-bold text-white mb-2">Source Text</h3>
