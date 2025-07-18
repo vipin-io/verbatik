@@ -1,5 +1,5 @@
 // File: app/page.tsx
-// v1.5: Corrected TypeScript types to pass Vercel's strict build process.
+// v2.3: Re-applied the vibrant gradient to the headline for a more dynamic feel.
 
 'use client';
 
@@ -43,7 +43,7 @@ export default function HomePage() {
       const { jobId } = result;
       router.push(`/r/${jobId}`);
 
-    } catch (err) { // FIXED: Replaced 'any' with the 'Error' type for better safety
+    } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'An unknown error occurred.';
       setError(errorMessage);
     } finally {
@@ -52,19 +52,29 @@ export default function HomePage() {
   };
 
   return (
-    <div className="flex flex-col items-center justify-center min-h-screen bg-gray-900 p-4 font-sans text-white">
-      <div className="w-full max-w-2xl mx-auto">
-        <div className="text-center mb-10">
-          <h1 className="text-5xl md:text-6xl font-bold tracking-tight bg-gradient-to-r from-purple-400 via-indigo-400 to-cyan-400 text-transparent bg-clip-text flex items-center justify-center gap-4">
-            <Logo />
-            <span>Find the Signal</span>
-          </h1>
-          <p className="mt-3 text-lg text-gray-400 max-w-xl mx-auto">
-            Paste raw user feedback, messy survey responses, or App Store reviews. Get clear, actionable themes in seconds.
-          </p>
+    // REFINED: Added a "spotlight" effect to the background for a more dynamic feel
+    <div className="flex flex-col items-center justify-center min-h-screen bg-gray-900 p-4 font-sans text-white overflow-hidden">
+      <div className="absolute inset-0 -z-10 h-full w-full bg-white bg-[linear-gradient(to_right,#f0f0f0_1px,transparent_1px),linear-gradient(to_bottom,#f0f0f0_1px,transparent_1px)] bg-[size:6rem_4rem] [mask-image:radial-gradient(ellipse_80%_50%_at_50%_0%,#000_70%,transparent_100%)] opacity-5"></div>
+      
+      <div className="w-full max-w-3xl mx-auto text-center">
+        {/* REFINED: A cleaner, more professional brand lock-up */}
+        <div className="flex items-center justify-center gap-3 mb-6">
+          <Logo />
+          <span className="text-2xl font-semibold text-gray-200">Verbatik</span>
         </div>
+        
+        {/* REFINED: Headline is now a single, powerful line with the vibrant gradient */}
+        <h1 className="text-4xl font-bold tracking-tighter bg-gradient-to-r from-purple-400 via-indigo-400 to-cyan-400 text-transparent bg-clip-text">
+          Stop Reading. Start Understanding.
+        </h1>
+        
+        {/* REFINED: Sub-headline is more stylized and better spaced */}
+        <p className="mt-6 text-lg text-gray-400 max-w-xl mx-auto">
+          Paste raw user feedback, get a clear, actionable report in <span className="text-white">10 seconds.</span>
+        </p>
 
-        <form onSubmit={handleSubmit} className="w-full bg-gray-800/50 border border-gray-700 rounded-xl shadow-lg p-2 transition-all duration-300 focus-within:ring-2 focus-within:ring-indigo-500 backdrop-blur-sm">
+        {/* REFINED: Added more vertical space to let the content breathe */}
+        <form onSubmit={handleSubmit} className="w-full mt-12 bg-gray-800/20 border border-gray-700/50 rounded-xl shadow-2xl p-2 transition-all duration-300 focus-within:ring-2 focus-within:ring-indigo-500 backdrop-blur-md">
           <div className="relative">
             <textarea
               id="feedback-text"
@@ -99,7 +109,7 @@ export default function HomePage() {
                     </svg>
                     Analyzing...
                   </div>
-                ) : 'Analyze'}
+                ) : 'Get My Insight Report'}
               </button>
             </div>
           </div>
@@ -111,11 +121,9 @@ export default function HomePage() {
             </div>
         )}
 
-        <div className="text-center mt-8">
-          <a href="#" className="text-sm text-gray-500 hover:text-gray-400 transition-colors">
-            Built by ThemeFinder
-          </a>
-        </div>
+        <p className="text-center mt-12 text-sm text-gray-500">
+            Tagline: Verbatim to Value.
+        </p>
       </div>
     </div>
   );

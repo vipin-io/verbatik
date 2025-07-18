@@ -1,5 +1,5 @@
 // File: app/r/[id]/page.tsx
-// v2.4: Corrected all 'any' types to pass Vercel's strict build process.
+// v2.5: Final, consolidated version with Verbatik branding and all build fixes.
 
 'use client';
 
@@ -26,14 +26,12 @@ interface ReportData {
   [key: string]: unknown;
 }
 
-// FIXED: Defined specific types for jspdf-autotable to remove 'any'
 type AutoTableColumn = string[];
 type AutoTableData = string[][];
 interface AutoTableOptions {
   startY: number;
 }
 
-// Create a custom type for jsPDF with the autoTable plugin method
 interface jsPDFWithAutoTable extends jsPDF {
   autoTable: (columns: AutoTableColumn, data: AutoTableData, options: AutoTableOptions) => jsPDF;
 }
@@ -75,28 +73,18 @@ const CategoryIcon = ({ category }: { category: string }) => {
 const parseFeedbackItems = (data: unknown): FeedbackItem[] => {
     const items: FeedbackItem[] = [];
     if (!data || typeof data !== 'object') return items;
-
     const isFeedbackItem = (item: unknown): item is Omit<FeedbackItem, 'category'> & { category?: string } => {
-        return item != null && typeof item === 'object' &&
-               'sentiment' in item && typeof (item as FeedbackItem).sentiment === 'string' &&
-               'summary' in item && typeof (item as FeedbackItem).summary === 'string' &&
-               'quote' in item && typeof (item as FeedbackItem).quote === 'string';
+        return item != null && typeof item === 'object' && 'sentiment' in item && typeof (item as FeedbackItem).sentiment === 'string' && 'summary' in item && typeof (item as FeedbackItem).summary === 'string' && 'quote' in item && typeof (item as FeedbackItem).quote === 'string';
     };
-    
     const findItemsRecursively = (obj: unknown, potentialCategory?: string) => {
         if (Array.isArray(obj)) {
             obj.forEach(item => findItemsRecursively(item, potentialCategory));
             return;
         }
-
         if (isFeedbackItem(obj)) {
-            items.push({
-                ...obj,
-                category: obj.category || potentialCategory || 'General',
-            });
+            items.push({ ...obj, category: obj.category || potentialCategory || 'General' });
             return;
         }
-
         if (typeof obj === 'object' && obj !== null) {
             Object.entries(obj).forEach(([key, value]) => {
                 if (key.toLowerCase() !== 'overall_summary' && key.toLowerCase() !== 'source_text') {
@@ -105,7 +93,6 @@ const parseFeedbackItems = (data: unknown): FeedbackItem[] => {
             });
         }
     };
-
     findItemsRecursively(data);
     return items;
 };
@@ -157,7 +144,7 @@ const ReportPage = () => {
     if (!report) return;
     const doc = new jsPDF() as jsPDFWithAutoTable;
     doc.setFontSize(18);
-    doc.text("ThemeFinder Analysis Report", 14, 22);
+    doc.text("Verbatik Insight Report", 14, 22);
     doc.setFontSize(11);
     doc.setTextColor(100);
     const summaryText = typeof report.overall_summary === 'string' ? report.overall_summary : Object.values(report.overall_summary).join(' ');
@@ -168,15 +155,13 @@ const ReportPage = () => {
         const ticketData = [ item.category, item.sentiment, item.summary, item.quote ];
         tableRows.push(ticketData);
     });
-    
     doc.autoTable(tableColumn, tableRows, { startY: 40 });
-    doc.save(`ThemeFinder_Report_${reportId}.pdf`);
+    doc.save(`Verbatik_Report_${reportId}.pdf`);
   };
   
   const highlightedSourceText = useMemo(() => {
     const sourceText = typeof report?.source_text === 'string' ? report.source_text : '';
     if (!sourceText || !hoveredQuote) return sourceText;
-    
     const parts = sourceText.split(new RegExp(`(${hoveredQuote})`, 'gi'));
     return parts.map((part: string, index: number) => 
       part.toLowerCase() === hoveredQuote.toLowerCase() ? 
@@ -197,9 +182,9 @@ const ReportPage = () => {
     <div className="min-h-screen bg-gray-900 p-4 sm:p-6 md:p-8 font-sans text-white">
       <div className="max-w-4xl mx-auto">
         <header className="mb-8 flex justify-between items-center">
-           <Link href="/" aria-label="Back to Home" className="flex items-center gap-3 text-2xl font-bold bg-gradient-to-r from-purple-400 via-indigo-400 to-cyan-400 text-transparent bg-clip-text hover:opacity-80 transition-opacity">
+           <Link href="/" aria-label="Back to Home" className="flex items-center gap-3 text-2xl font-bold text-gray-100 hover:opacity-80 transition-opacity">
             <Logo />
-            <span>ThemeFinder</span>
+            <span>Verbatik</span>
           </Link>
           {report && (
             <div className="flex items-center gap-2">
@@ -225,7 +210,7 @@ const ReportPage = () => {
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
               <div className="lg:col-span-2 space-y-6">
                 <div>
-                  <h1 className="text-3xl md:text-4xl font-bold text-white mb-2">Analysis Report</h1>
+                  <h1 className="text-3xl md:text-4xl font-bold text-white mb-2">Insight Report</h1>
                   <p className="text-lg text-gray-400 mb-6">{getSummaryText(report.overall_summary)}</p>
                 </div>
                 <div className="space-y-4">
@@ -281,7 +266,7 @@ const ReportPage = () => {
                     <LockIcon />
                   </div>
                   <p className="text-sm text-gray-400 mt-2">Compare this week&apos;s themes with historical data to track trends. (Pro Feature)</p>
-                  <div className="absolute bottom-full mb-2 left-1/2 -translate-x-1/2 px-2 py-1 text-xs text-white bg-gray-950 rounded-md opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none">
+                  <div className="absolute bottom-full mb-2 left-1/2 -translate-x-1_2 px-2 py-1 text-xs text-white bg-gray-950 rounded-md opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none">
                     Track trends week-over-week
                   </div>
                 </div>
@@ -299,7 +284,5 @@ const ReportPage = () => {
     </div>
   );
 };
-
-
 
 export default ReportPage;
