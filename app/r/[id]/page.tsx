@@ -25,6 +25,7 @@ interface ReportData {
   [key: string]: any;
 }
 
+
 // --- UI COMPONENTS ---
 const ReportSkeleton = () => (
   <div className="animate-pulse w-full">
