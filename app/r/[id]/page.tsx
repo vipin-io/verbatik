@@ -1,5 +1,5 @@
 // File: app/r/[id]/page.tsx
-// v2.3: Corrected final 'any' type for jspdf-autotable to pass Vercel's strict build process.
+// v2.4: Corrected all 'any' types to pass Vercel's strict build process.
 
 'use client';
 
@@ -26,9 +26,16 @@ interface ReportData {
   [key: string]: unknown;
 }
 
-// FIXED: Create a custom type for jsPDF with the autoTable plugin method
+// FIXED: Defined specific types for jspdf-autotable to remove 'any'
+type AutoTableColumn = string[];
+type AutoTableData = string[][];
+interface AutoTableOptions {
+  startY: number;
+}
+
+// Create a custom type for jsPDF with the autoTable plugin method
 interface jsPDFWithAutoTable extends jsPDF {
-  autoTable: (columns: any, data: any, options: any) => jsPDF;
+  autoTable: (columns: AutoTableColumn, data: AutoTableData, options: AutoTableOptions) => jsPDF;
 }
 
 // --- UI COMPONENTS ---
@@ -148,15 +155,15 @@ const ReportPage = () => {
 
   const handleDownloadPDF = () => {
     if (!report) return;
-    const doc = new jsPDF() as jsPDFWithAutoTable; // Use our custom type
+    const doc = new jsPDF() as jsPDFWithAutoTable;
     doc.setFontSize(18);
     doc.text("ThemeFinder Analysis Report", 14, 22);
     doc.setFontSize(11);
     doc.setTextColor(100);
     const summaryText = typeof report.overall_summary === 'string' ? report.overall_summary : Object.values(report.overall_summary).join(' ');
     doc.text(`Overall Summary: ${summaryText}`, 14, 32);
-    const tableColumn = ["Category", "Sentiment", "Summary", "Quote"];
-    const tableRows: (string[])[] = [];
+    const tableColumn: AutoTableColumn = ["Category", "Sentiment", "Summary", "Quote"];
+    const tableRows: AutoTableData = [];
     feedbackItems.forEach(item => {
         const ticketData = [ item.category, item.sentiment, item.summary, item.quote ];
         tableRows.push(ticketData);
