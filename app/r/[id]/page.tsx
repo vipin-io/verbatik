@@ -1,5 +1,5 @@
 // File: app/r/[id]/page.tsx
-// v3.2: Final version with Actionable Layer and all build fixes.
+// v3.3: Definitive version with all expert feedback from ChatGPT incorporated.
 
 'use client';
 
@@ -181,6 +181,7 @@ const ReportPage = () => {
                   <p className="text-lg text-gray-400 mb-6">{getSummaryText(report.overall_summary)}</p>
                 </div>
 
+                {/* REFINED: Executive Summary Widget */}
                 {executiveSummary && (
                     <div className="bg-gray-800/50 border border-gray-700 rounded-lg p-5">
                         <h3 className="font-semibold text-white mb-4">Executive Summary</h3>
@@ -192,12 +193,16 @@ const ReportPage = () => {
                             <div>
                                 <p className="text-gray-400">Sentiment Breakdown</p>
                                 <div className="flex items-center gap-4 mt-2">
-                                    <div className="flex items-center gap-2">
-                                        <div className="w-3 h-3 rounded-full bg-green-500"></div>
+                                    <div className="flex items-center gap-2" title="Positive">
+                                        <span className="text-lg">🟢</span>
                                         <span className="text-white font-semibold">{executiveSummary.sentimentCounts.Positive || 0}</span>
                                     </div>
-                                    <div className="flex items-center gap-2">
-                                        <div className="w-3 h-3 rounded-full bg-red-500"></div>
+                                    <div className="flex items-center gap-2" title="Neutral">
+                                        <span className="text-lg">🟡</span>
+                                        <span className="text-white font-semibold">{executiveSummary.sentimentCounts.Neutral || 0}</span>
+                                    </div>
+                                    <div className="flex items-center gap-2" title="Negative">
+                                        <span className="text-lg">🔴</span>
                                         <span className="text-white font-semibold">{executiveSummary.sentimentCounts.Negative || 0}</span>
                                     </div>
                                 </div>
@@ -205,7 +210,7 @@ const ReportPage = () => {
                             {executiveSummary.topPriorityItem && (
                                 <div className="col-span-1 sm:col-span-2">
                                     <p className="text-gray-400">Top Priority Action</p>
-                                    <p className="text-white font-semibold mt-1 bg-yellow-500/10 border border-yellow-500/30 rounded-md p-2">
+                                    <p className="text-base text-white font-semibold mt-1 bg-yellow-500/10 border border-yellow-500/30 rounded-md p-2">
                                         {executiveSummary.topPriorityItem.summary}
                                     </p>
                                 </div>
@@ -256,6 +261,7 @@ const ReportPage = () => {
                   )) : ( <div className="text-center p-6 bg-gray-800/50 border border-gray-700 rounded-lg"><p className="text-gray-400">No individual feedback items were categorized.</p></div> )}
                 </div>
                 
+                {/* REFINED: Added a second CTA at the bottom of the main content */}
                 <div className="mt-10 text-center">
                     <h3 className="text-xl font-semibold text-white">Ready to Automate Your Feedback Loop?</h3>
                     <p className="text-gray-400 mt-2">Upgrade to Pro to connect your data sources and get these insights delivered to you automatically.</p>
