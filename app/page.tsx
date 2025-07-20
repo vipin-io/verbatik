@@ -1,5 +1,5 @@
 // File: app/page.tsx
-// v2.6: Implemented a professional, non-resizing loading state for a superior user experience.
+// v2.9: Definitive version. Incorporates all expert feedback for a high-converting, professional landing page.
 
 'use client';
 
@@ -12,6 +12,26 @@ const PaperclipIcon = () => (
     <path d="m21.44 11.05-9.19 9.19a6 6 0 0 1-8.49-8.49l8.57-8.57A4 4 0 1 1 18 8.84l-8.59 8.59a2 2 0 0 1-2.83-2.83l8.49-8.48"></path>
   </svg>
 );
+
+// --- NEW: Preview Card Component ---
+const PreviewCard = ({ category, sentiment, summary, priority }: { category: string, sentiment: string, summary: string, priority: string }) => {
+    const sentimentColor = sentiment === 'Positive' ? 'text-green-400' : sentiment === 'Negative' ? 'text-red-400' : 'text-yellow-400';
+    const priorityColor = priority === 'High' ? 'bg-red-500/20 text-red-300' : priority === 'Medium' ? 'bg-yellow-500/20 text-yellow-300' : 'bg-gray-500/20 text-gray-300';
+
+    return (
+        <div className="bg-gray-800/50 border border-gray-700/80 rounded-lg p-4 text-left animate-pulse">
+            <div className="flex items-center justify-between mb-2">
+                <div className="flex items-center gap-2">
+                    <span className={`text-xs font-semibold ${sentimentColor}`}>{sentiment}</span>
+                    <span className="text-xs text-indigo-400 font-medium">{category}</span>
+                </div>
+                <span className={`text-xs font-bold px-2 py-0.5 rounded-full ${priorityColor}`}>{priority}</span>
+            </div>
+            <p className="text-sm text-gray-200 font-medium">{summary}</p>
+        </div>
+    );
+};
+
 
 const loadingMessages = [
   "Connecting to AI...",
@@ -79,7 +99,7 @@ export default function HomePage() {
     <div className="flex flex-col items-center justify-center min-h-screen bg-gray-900 p-4 font-sans text-white overflow-hidden">
       <div className="absolute inset-0 -z-10 h-full w-full bg-white bg-[linear-gradient(to_right,#f0f0f0_1px,transparent_1px),linear-gradient(to_bottom,#f0f0f0_1px,transparent_1px)] bg-[size:6rem_4rem] [mask-image:radial-gradient(ellipse_80%_50%_at_50%_0%,#000_70%,transparent_100%)] opacity-5"></div>
       
-      <div className="w-full max-w-3xl mx-auto text-center">
+      <div className="w-full max-w-3xl mx-auto text-center px-4">
         <div className="flex flex-col items-center justify-center gap-2 mb-8">
           <div className="flex items-center gap-3">
             <Logo />
@@ -131,17 +151,30 @@ export default function HomePage() {
                     </svg>
                     <span>Analyzing...</span>
                   </div>
-                ) : 'Get Report'}
+                ) : 'Get My Insight Report'}
               </button>
             </div>
           </div>
         </form>
         
-        {/* REFINED: Loading messages and errors now appear outside the form */}
         <div className="mt-4 text-center h-6">
             {isLoading && <p className="text-indigo-400 animate-pulse">{loadingMessage}</p>}
             {error && <p className="text-red-400 font-medium">{error}</p>}
         </div>
+
+        {/* --- NEW: Hero Preview & Trust Signals --- */}
+        <div className="mt-16 w-full max-w-2xl mx-auto">
+            <p className="text-center text-sm font-semibold text-gray-400 mb-4">YOUR INSTANT REPORT WILL LOOK LIKE THIS</p>
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                <PreviewCard category="Bug Report" sentiment="Negative" summary="App crashes when exporting to PDF" priority="High" />
+                <PreviewCard category="Feature Request" sentiment="Neutral" summary="Users want a calendar view for deadlines" priority="Medium" />
+                <PreviewCard category="Positive Feedback" sentiment="Positive" summary="Users love the new dark mode" priority="Low" />
+            </div>
+            <div className="mt-8 text-center">
+                <p className="text-lg font-semibold text-gray-200">Trusted by Product Managers at leading startups.</p>
+            </div>
+        </div>
+
       </div>
     </div>
   );
