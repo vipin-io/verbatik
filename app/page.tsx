@@ -6,7 +6,31 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { Logo } from './components/Logo';
-import { motion } from 'framer-motion';
+import { motion, Variants  } from 'framer-motion';
+
+// Parent container controls staggering
+const containerVariants = {
+  hidden: {},
+  visible: {
+    transition: {
+      staggerChildren: 0.15,
+    }
+  }
+};
+
+// Each card will animate from y=20 → y=0 with a spring bounce
+const cardVariants: Variants = {
+  hidden: { opacity: 0, y: 20 },
+  visible: {
+    opacity: 1,
+    y: 0,
+    transition: {
+      type: 'spring',
+      stiffness: 300,
+      damping: 20
+    }
+  }
+};
 
 const PaperclipIcon = () => (
   <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-5 w-5 text-gray-500 group-hover:text-indigo-400 transition-colors">
@@ -21,6 +45,7 @@ const PreviewCard = ({ category, sentiment, summary, priority }: { category: str
 
   return (
     <motion.div
+      variants={cardVariants}
       initial={{ scale: 0.95, opacity: 0 }}
       animate={{ scale: 1, opacity: 1 }}
       transition={{ duration: 0.4, ease: 'easeOut' }}
@@ -172,17 +197,22 @@ export default function HomePage() {
         {/* --- NEW: Hero Preview & Trust Signals --- */}
         <div className="mt-16 w-full max-w-2xl mx-auto">
           <p className="text-center text-sm font-semibold text-gray-400 mb-4">YOUR INSTANT REPORT WILL LOOK LIKE THIS</p>
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+          <motion.div
+            className="grid grid-cols-1 sm:grid-cols-3 gap-4"
+            initial="hidden"
+            animate="visible"
+            variants={containerVariants}
+          >
             <PreviewCard category="Bug Report" sentiment="Negative" summary="App crashes when exporting to PDF" priority="High" />
             <PreviewCard category="Feature Request" sentiment="Neutral" summary="Users want a calendar view for deadlines" priority="Medium" />
             <PreviewCard category="Positive Feedback" sentiment="Positive" summary="Users love the new dark mode" priority="Low" />
-          </div>
+          </motion.div>
           <div className="mt-8 text-center">
             <p className="text-lg font-semibold text-gray-200">Trusted by Product Managers at leading startups.</p>
           </div>
         </div>
 
       </div>
-    </div>
+    </div >
   );
 }
