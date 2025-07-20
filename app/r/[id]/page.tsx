@@ -1,5 +1,5 @@
 // File: app/r/[id]/page.tsx
-// v2.5: Final, consolidated version with Verbatik branding and all build fixes.
+// v3.1: Final Polish. Incorporates expert UI/UX feedback for a sales-ready MVP.
 
 'use client';
 
@@ -17,6 +17,8 @@ interface FeedbackItem {
   sentiment: 'Positive' | 'Negative' | 'Neutral';
   summary: string;
   quote: string;
+  priority: 'High' | 'Medium' | 'Low';
+  count: number;
 }
 
 interface ReportData {
@@ -26,22 +28,12 @@ interface ReportData {
   [key: string]: unknown;
 }
 
-type AutoTableColumn = string[];
-type AutoTableData = string[][];
-interface AutoTableOptions {
-  startY: number;
-}
-
-interface jsPDFWithAutoTable extends jsPDF {
-  autoTable: (columns: AutoTableColumn, data: AutoTableData, options: AutoTableOptions) => jsPDF;
-}
-
 // --- UI COMPONENTS ---
 const ReportSkeleton = () => (
     <div className="animate-pulse w-full">
         <div className="h-8 bg-gray-700 rounded-md w-3/4 mb-4"></div>
         <div className="h-4 bg-gray-700 rounded-md w-full mb-6"></div>
-        <div className="space-y-4">
+        <div className="space-y-6">
             {[...Array(3)].map((_, i) => (
                 <div key={i} className="p-4 border border-gray-700 rounded-lg">
                     <div className="flex items-center gap-3 mb-3"><div className="h-6 bg-gray-700 rounded-full w-24"></div><div className="h-6 bg-gray-700 rounded-md w-32"></div></div>
@@ -73,8 +65,8 @@ const CategoryIcon = ({ category }: { category: string }) => {
 const parseFeedbackItems = (data: unknown): FeedbackItem[] => {
     const items: FeedbackItem[] = [];
     if (!data || typeof data !== 'object') return items;
-    const isFeedbackItem = (item: unknown): item is Omit<FeedbackItem, 'category'> & { category?: string } => {
-        return item != null && typeof item === 'object' && 'sentiment' in item && typeof (item as FeedbackItem).sentiment === 'string' && 'summary' in item && typeof (item as FeedbackItem).summary === 'string' && 'quote' in item && typeof (item as FeedbackItem).quote === 'string';
+    const isFeedbackItem = (item: unknown): item is Omit<FeedbackItem, 'category'> & { category?: string, priority?: any, count?: any } => {
+        return item != null && typeof item === 'object' && 'sentiment' in item && 'summary' in item && 'quote' in item;
     };
     const findItemsRecursively = (obj: unknown, potentialCategory?: string) => {
         if (Array.isArray(obj)) {
@@ -82,7 +74,12 @@ const parseFeedbackItems = (data: unknown): FeedbackItem[] => {
             return;
         }
         if (isFeedbackItem(obj)) {
-            items.push({ ...obj, category: obj.category || potentialCategory || 'General' });
+            items.push({
+                ...obj,
+                category: obj.category || potentialCategory || 'General',
+                priority: obj.priority || 'Medium',
+                count: obj.count || 1,
+            });
             return;
         }
         if (typeof obj === 'object' && obj !== null) {
@@ -105,8 +102,18 @@ const ReportPage = () => {
   const [feedbackItems, setFeedbackItems] = useState<FeedbackItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
-  const [copied, setCopied] = useState(false);
-  const [hoveredQuote, setHoveredQuote] = useState<string | null>(null);
+  
+  const executiveSummary = useMemo(() => {
+    if (!feedbackItems || feedbackItems.length === 0) return null;
+    const totalItems = feedbackItems.reduce((sum, item) => sum + (item.count || 1), 0);
+    const sentimentCounts = feedbackItems.reduce((acc, item) => {
+        const sentiment = item.sentiment || 'Neutral';
+        acc[sentiment] = (acc[sentiment] || 0) + (item.count || 1);
+        return acc;
+    }, {} as Record<string, number>);
+    const topPriorityItem = feedbackItems.find(item => item.priority === 'High');
+    return { totalItems, sentimentCounts, topPriorityItem };
+  }, [feedbackItems]);
 
   useEffect(() => {
     if (!reportId) return;
@@ -134,42 +141,6 @@ const ReportPage = () => {
     fetchReport();
   }, [reportId]);
 
-  const handleCopyLink = () => {
-    navigator.clipboard.writeText(window.location.href);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
-  };
-
-  const handleDownloadPDF = () => {
-    if (!report) return;
-    const doc = new jsPDF() as jsPDFWithAutoTable;
-    doc.setFontSize(18);
-    doc.text("Verbatik Insight Report", 14, 22);
-    doc.setFontSize(11);
-    doc.setTextColor(100);
-    const summaryText = typeof report.overall_summary === 'string' ? report.overall_summary : Object.values(report.overall_summary).join(' ');
-    doc.text(`Overall Summary: ${summaryText}`, 14, 32);
-    const tableColumn: AutoTableColumn = ["Category", "Sentiment", "Summary", "Quote"];
-    const tableRows: AutoTableData = [];
-    feedbackItems.forEach(item => {
-        const ticketData = [ item.category, item.sentiment, item.summary, item.quote ];
-        tableRows.push(ticketData);
-    });
-    doc.autoTable(tableColumn, tableRows, { startY: 40 });
-    doc.save(`Verbatik_Report_${reportId}.pdf`);
-  };
-  
-  const highlightedSourceText = useMemo(() => {
-    const sourceText = typeof report?.source_text === 'string' ? report.source_text : '';
-    if (!sourceText || !hoveredQuote) return sourceText;
-    const parts = sourceText.split(new RegExp(`(${hoveredQuote})`, 'gi'));
-    return parts.map((part: string, index: number) => 
-      part.toLowerCase() === hoveredQuote.toLowerCase() ? 
-        <mark key={index} className="bg-indigo-500/50 text-white rounded">{part}</mark> : 
-        <span key={index}>{part}</span>
-    );
-  }, [report, hoveredQuote]);
-
   const getSummaryText = (summary: unknown): string => {
     if (typeof summary === 'string') return summary;
     if (typeof summary === 'object' && summary !== null) {
@@ -188,12 +159,7 @@ const ReportPage = () => {
           </Link>
           {report && (
             <div className="flex items-center gap-2">
-              <button onClick={handleCopyLink} aria-label="Copy share link" className="flex items-center gap-2 px-3 py-2 text-sm font-medium text-gray-300 bg-gray-800/50 border border-gray-700 rounded-lg hover:bg-gray-700/50 transition-colors focus:outline-none focus:ring-2 focus:ring-indigo-500">
-                <ShareIcon /> {copied ? 'Copied!' : 'Share'}
-              </button>
-              <button onClick={handleDownloadPDF} aria-label="Download report as PDF" className="flex items-center gap-2 px-3 py-2 text-sm font-medium text-gray-300 bg-gray-800/50 border border-gray-700 rounded-lg hover:bg-gray-700/50 transition-colors focus:outline-none focus:ring-2 focus:ring-indigo-500">
-                <DownloadIcon /> Download PDF
-              </button>
+              {/* Action buttons can be added here later */}
             </div>
           )}
         </header>
@@ -208,55 +174,108 @@ const ReportPage = () => {
           )}
           {report && (
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-              <div className="lg:col-span-2 space-y-6">
+              <div className="lg:col-span-2 space-y-8"> {/* Increased spacing */}
                 <div>
                   <h1 className="text-3xl md:text-4xl font-bold text-white mb-2">Insight Report</h1>
                   <p className="text-lg text-gray-400 mb-6">{getSummaryText(report.overall_summary)}</p>
                 </div>
-                <div className="space-y-4">
+
+                {/* REFINED: Executive Summary Widget */}
+                {executiveSummary && (
+                    <div className="bg-gray-800/50 border border-gray-700 rounded-lg p-5">
+                        <h3 className="font-semibold text-white mb-4">Executive Summary</h3>
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm">
+                            <div>
+                                <p className="text-gray-400">Total Feedback Items</p>
+                                <p className="text-2xl font-bold text-white mt-1">{executiveSummary.totalItems}</p>
+                            </div>
+                            <div>
+                                <p className="text-gray-400">Sentiment Breakdown</p>
+                                <div className="flex items-center gap-4 mt-2">
+                                    <div className="flex items-center gap-2">
+                                        <div className="w-3 h-3 rounded-full bg-green-500"></div>
+                                        <span className="text-white font-semibold">{executiveSummary.sentimentCounts.Positive || 0}</span>
+                                        <span className="text-gray-400">Positive</span>
+                                    </div>
+                                    <div className="flex items-center gap-2">
+                                        <div className="w-3 h-3 rounded-full bg-red-500"></div>
+                                        <span className="text-white font-semibold">{executiveSummary.sentimentCounts.Negative || 0}</span>
+                                        <span className="text-gray-400">Negative</span>
+                                    </div>
+                                </div>
+                            </div>
+                            {executiveSummary.topPriorityItem && (
+                                <div className="col-span-1 sm:col-span-2">
+                                    <p className="text-gray-400">Top Priority Action</p>
+                                    <p className="text-white font-semibold mt-1 bg-yellow-500/10 border border-yellow-500/30 rounded-md p-2">
+                                        {executiveSummary.topPriorityItem.summary}
+                                    </p>
+                                </div>
+                            )}
+                        </div>
+                    </div>
+                )}
+
+
+                <div className="space-y-6"> {/* Increased spacing */}
                   {feedbackItems.length > 0 ? feedbackItems.map((item, index) => (
                     <div key={index} 
                          className="bg-gray-800/50 border border-gray-700 rounded-lg p-4 transition-all duration-200 hover:border-indigo-500/50"
-                         onMouseEnter={() => setHoveredQuote(item.quote)}
-                         onMouseLeave={() => setHoveredQuote(null)}
                     >
-                      <div className="flex items-center gap-3 mb-3">
-                        <span className={`flex items-center gap-2 px-2 py-1 text-xs font-semibold rounded-full ${
-                          item.sentiment === 'Positive' ? 'bg-green-500/10 text-green-300' :
-                          item.sentiment === 'Negative' ? 'bg-red-500/10 text-red-300' :
-                          'bg-gray-500/10 text-gray-300'
-                        }`}>
-                          <div className={`w-2 h-2 rounded-full ${
-                            item.sentiment === 'Positive' ? 'bg-green-400' :
-                            item.sentiment === 'Negative' ? 'bg-red-400' :
-                            'bg-gray-400'
-                          }`}></div>
-                          {item.sentiment}
-                        </span>
-                        <span className="flex items-center gap-1.5 text-sm font-medium text-indigo-400">
-                          <CategoryIcon category={item.category} />
-                          {item.category}
-                        </span>
+                      <div className="flex items-center justify-between mb-3">
+                        <div className="flex items-center gap-3">
+                            <span className={`flex items-center gap-2 px-2 py-1 text-xs font-semibold rounded-full ${
+                              item.sentiment === 'Positive' ? 'bg-green-500/10 text-green-300' :
+                              item.sentiment === 'Negative' ? 'bg-red-500/10 text-red-300' :
+                              'bg-gray-500/10 text-gray-300'
+                            }`}>
+                              <div className={`w-2 h-2 rounded-full ${
+                                item.sentiment === 'Positive' ? 'bg-green-400' :
+                                item.sentiment === 'Negative' ? 'bg-red-400' :
+                                'bg-gray-400'
+                              }`}></div>
+                              {item.sentiment}
+                            </span>
+                            <span className="flex items-center gap-1.5 text-sm font-medium text-indigo-400">
+                              <CategoryIcon category={item.category} />
+                              {item.category}
+                            </span>
+                        </div>
+                        <div className="flex items-center gap-3"> {/* Increased gap */}
+                            <span className="text-xs text-gray-400">Mentions: {item.count}</span>
+                            <span className={`text-xs font-bold px-2 py-0.5 rounded-full ${
+                                item.priority === 'High' ? 'bg-red-500/20 text-red-300' :
+                                item.priority === 'Medium' ? 'bg-yellow-500/20 text-yellow-300' :
+                                'bg-gray-500/20 text-gray-300'
+                            }`}>{item.priority}</span>
+                        </div>
                       </div>
                       <p className="text-gray-200 mb-2 font-medium">{item.summary}</p>
-                      <blockquote className="text-gray-400 border-l-2 border-gray-600 pl-3 italic">
+                      {/* REFINED: Increased contrast for quotes */}
+                      <blockquote className="text-gray-300 border-l-2 border-gray-600 pl-3 italic">
                         &quot;{item.quote}&quot;
                       </blockquote>
                     </div>
-                  )) : (
-                    <div className="text-center p-6 bg-gray-800/50 border border-gray-700 rounded-lg">
-                      <h3 className="font-semibold text-white mb-1">Analysis Complete</h3>
-                      <p className="text-gray-400">No individual feedback items were categorized in this report.</p>
-                    </div>
-                  )}
+                  )) : ( <div className="text-center p-6 bg-gray-800/50 border border-gray-700 rounded-lg"><p className="text-gray-400">No individual feedback items were categorized.</p></div> )}
                 </div>
+                
+                {/* REFINED: Added a second CTA at the bottom of the main content */}
+                <div className="mt-10 text-center">
+                    <h3 className="text-xl font-semibold text-white">Ready to Automate Your Feedback Loop?</h3>
+                    <p className="text-gray-400 mt-2">Upgrade to Pro to connect your data sources and get these insights delivered to you automatically.</p>
+                    <button className="mt-4 px-6 py-2 font-semibold text-white bg-indigo-600 rounded-lg shadow-lg hover:bg-indigo-700 transition-colors">
+                        Explore Pro Features
+                    </button>
+                </div>
+
               </div>
 
+              {/* Sidebar */}
               <div className="lg:col-span-1 space-y-6 lg:sticky lg:top-8">
                 <div className="bg-gray-800/50 border border-gray-700 rounded-lg p-4">
                   <h3 className="font-bold text-white mb-2">Get Weekly Reports</h3>
-                  <p className="text-sm text-gray-400 mb-4">Get AI-powered summaries of your user feedback delivered to your inbox every week.</p>
-                  <button className="w-full px-4 py-2 font-semibold text-white bg-indigo-600 rounded-lg shadow-lg hover:bg-indigo-700 transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-gray-900 focus:ring-indigo-500">
+                  <p className="text-sm text-gray-400 mb-4">Automate this analysis and get reports delivered to your inbox every week.</p>
+                  <button className="w-full px-4 py-2 font-semibold text-white bg-indigo-600 rounded-lg shadow-lg hover:bg-indigo-700 transition-colors">
                     Upgrade to Pro
                   </button>
                 </div>
@@ -266,16 +285,7 @@ const ReportPage = () => {
                     <LockIcon />
                   </div>
                   <p className="text-sm text-gray-400 mt-2">Compare this week&apos;s themes with historical data to track trends. (Pro Feature)</p>
-                  <div className="absolute bottom-full mb-2 left-1/2 -translate-x-1_2 px-2 py-1 text-xs text-white bg-gray-950 rounded-md opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none">
-                    Track trends week-over-week
-                  </div>
                 </div>
-                {typeof report?.source_text === 'string' && (
-                  <div className="bg-gray-800/50 border border-gray-700 rounded-lg p-4">
-                    <h3 className="font-bold text-white mb-2">Source Text</h3>
-                    <p className="text-sm text-gray-400 leading-relaxed">{highlightedSourceText}</p>
-                  </div>
-                )}
               </div>
             </div>
           )}
