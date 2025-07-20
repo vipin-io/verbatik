@@ -1,12 +1,12 @@
-// // File: app/dashboard/page.tsx
-// // v2.7: A definitive refactor for type-safety to resolve all Recharts build errors.
+// File: app/dashboard/page.tsx
+// v2.7: A definitive refactor for type-safety to resolve all Recharts build errors.
 
-// 'use client';
+'use client';
 
-// import { Area, AreaChart, CartesianGrid, Legend, Pie, PieChart, ResponsiveContainer, Tooltip, XAxis, YAxis, Cell, Sector } from 'recharts';
-// import { Logo } from '@/app/components/Logo';
-// import Link from 'next/link';
-// import React, { useState } from 'react';
+import { Area, AreaChart, CartesianGrid, Legend, Pie, PieChart, ResponsiveContainer, Tooltip, XAxis, YAxis, Cell, Sector } from 'recharts';
+import { Logo } from '@/app/components/Logo';
+import Link from 'next/link';
+import React, { useState } from 'react';
 
 // // --- TYPE DEFINITIONS ---
 // interface MonthlySummary {
@@ -133,7 +133,7 @@
 // );
 
 
-// export default function DashboardPage() {
+export default function DashboardPage() {
 //   const [activeIndex, setActiveIndex] = useState(0);
 //   const onPieEnter = (_: unknown, index: number) => {
 //     setActiveIndex(index);
@@ -223,6 +223,6 @@
 //       </div>
 //     </div>
 //   );
-// }
+}
 
 
