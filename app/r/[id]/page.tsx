@@ -1,5 +1,5 @@
 // File: app/r/[id]/page.tsx
-// v3.1: Final Polish. Incorporates expert UI/UX feedback for a sales-ready MVP.
+// v3.2: Final version with Actionable Layer and all build fixes.
 
 'use client';
 
@@ -65,7 +65,7 @@ const CategoryIcon = ({ category }: { category: string }) => {
 const parseFeedbackItems = (data: unknown): FeedbackItem[] => {
     const items: FeedbackItem[] = [];
     if (!data || typeof data !== 'object') return items;
-    const isFeedbackItem = (item: unknown): item is Omit<FeedbackItem, 'category'> & { category?: string, priority?: any, count?: any } => {
+    const isFeedbackItem = (item: unknown): item is Omit<FeedbackItem, 'category'> & { category?: string, priority?: unknown, count?: unknown } => {
         return item != null && typeof item === 'object' && 'sentiment' in item && 'summary' in item && 'quote' in item;
     };
     const findItemsRecursively = (obj: unknown, potentialCategory?: string) => {
@@ -77,8 +77,8 @@ const parseFeedbackItems = (data: unknown): FeedbackItem[] => {
             items.push({
                 ...obj,
                 category: obj.category || potentialCategory || 'General',
-                priority: obj.priority || 'Medium',
-                count: obj.count || 1,
+                priority: (obj.priority as 'High' | 'Medium' | 'Low') || 'Medium',
+                count: (obj.count as number) || 1,
             });
             return;
         }
@@ -114,6 +114,7 @@ const ReportPage = () => {
     const topPriorityItem = feedbackItems.find(item => item.priority === 'High');
     return { totalItems, sentimentCounts, topPriorityItem };
   }, [feedbackItems]);
+
 
   useEffect(() => {
     if (!reportId) return;
@@ -174,13 +175,12 @@ const ReportPage = () => {
           )}
           {report && (
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-              <div className="lg:col-span-2 space-y-8"> {/* Increased spacing */}
+              <div className="lg:col-span-2 space-y-8">
                 <div>
                   <h1 className="text-3xl md:text-4xl font-bold text-white mb-2">Insight Report</h1>
                   <p className="text-lg text-gray-400 mb-6">{getSummaryText(report.overall_summary)}</p>
                 </div>
 
-                {/* REFINED: Executive Summary Widget */}
                 {executiveSummary && (
                     <div className="bg-gray-800/50 border border-gray-700 rounded-lg p-5">
                         <h3 className="font-semibold text-white mb-4">Executive Summary</h3>
@@ -195,12 +195,10 @@ const ReportPage = () => {
                                     <div className="flex items-center gap-2">
                                         <div className="w-3 h-3 rounded-full bg-green-500"></div>
                                         <span className="text-white font-semibold">{executiveSummary.sentimentCounts.Positive || 0}</span>
-                                        <span className="text-gray-400">Positive</span>
                                     </div>
                                     <div className="flex items-center gap-2">
                                         <div className="w-3 h-3 rounded-full bg-red-500"></div>
                                         <span className="text-white font-semibold">{executiveSummary.sentimentCounts.Negative || 0}</span>
-                                        <span className="text-gray-400">Negative</span>
                                     </div>
                                 </div>
                             </div>
@@ -217,7 +215,7 @@ const ReportPage = () => {
                 )}
 
 
-                <div className="space-y-6"> {/* Increased spacing */}
+                <div className="space-y-6">
                   {feedbackItems.length > 0 ? feedbackItems.map((item, index) => (
                     <div key={index} 
                          className="bg-gray-800/50 border border-gray-700 rounded-lg p-4 transition-all duration-200 hover:border-indigo-500/50"
@@ -241,7 +239,7 @@ const ReportPage = () => {
                               {item.category}
                             </span>
                         </div>
-                        <div className="flex items-center gap-3"> {/* Increased gap */}
+                        <div className="flex items-center gap-3">
                             <span className="text-xs text-gray-400">Mentions: {item.count}</span>
                             <span className={`text-xs font-bold px-2 py-0.5 rounded-full ${
                                 item.priority === 'High' ? 'bg-red-500/20 text-red-300' :
@@ -251,7 +249,6 @@ const ReportPage = () => {
                         </div>
                       </div>
                       <p className="text-gray-200 mb-2 font-medium">{item.summary}</p>
-                      {/* REFINED: Increased contrast for quotes */}
                       <blockquote className="text-gray-300 border-l-2 border-gray-600 pl-3 italic">
                         &quot;{item.quote}&quot;
                       </blockquote>
@@ -259,7 +256,6 @@ const ReportPage = () => {
                   )) : ( <div className="text-center p-6 bg-gray-800/50 border border-gray-700 rounded-lg"><p className="text-gray-400">No individual feedback items were categorized.</p></div> )}
                 </div>
                 
-                {/* REFINED: Added a second CTA at the bottom of the main content */}
                 <div className="mt-10 text-center">
                     <h3 className="text-xl font-semibold text-white">Ready to Automate Your Feedback Loop?</h3>
                     <p className="text-gray-400 mt-2">Upgrade to Pro to connect your data sources and get these insights delivered to you automatically.</p>
