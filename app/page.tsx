@@ -70,6 +70,7 @@ const loadingMessages = [
   "Finalizing your report...",
 ];
 
+
 export default function HomePage() {
   const [text, setText] = useState('');
   const [isLoading, setIsLoading] = useState(false);
@@ -91,7 +92,6 @@ export default function HomePage() {
     }
     return () => clearInterval(interval);
   }, [isLoading]);
-
 
   const wordCount = text.trim() === '' ? 0 : text.trim().split(/\s+/).length;
   const WORD_LIMIT = 1500;
@@ -125,19 +125,29 @@ export default function HomePage() {
   };
 
   return (
-    <div className="flex flex-col items-center justify-center min-h-screen bg-gray-900 p-4 font-sans text-white overflow-hidden">
-      <div className="absolute inset-0 -z-10 h-full w-full bg-white bg-[linear-gradient(to_right,#f0f0f0_1px,transparent_1px),linear-gradient(to_bottom,#f0f0f0_1px,transparent_1px)] bg-[size:6rem_4rem] [mask-image:radial-gradient(ellipse_80%_50%_at_50%_0%,#000_70%,transparent_100%)] opacity-5"></div>
+    <div className="min-h-screen bg-[#181028] font-sans text-white overflow-hidden">
+      {/* Top Navigation Bar */}
+      <nav className="flex items-center justify-between px-8 py-6">
+        <div className="flex items-center gap-3">
+          <Logo />
+          <span className="text-2xl font-bold text-white tracking-tight">VERBATIK</span>
+        </div>
+        <div className="flex items-center gap-8 text-base font-medium">
+          <a href="#" className="text-gray-300 hover:text-white transition">Product</a>
+          <a href="#" className="text-gray-300 hover:text-white transition">Pricing</a>
+          <a href="#" className="text-gray-300 hover:text-white transition">Resources</a>
+          <a href="#" className="text-gray-300 hover:text-white transition">Log in</a>
+          <a href="#" className="ml-2 px-4 py-2 rounded-lg bg-gradient-to-r from-purple-500 to-pink-500 text-white font-semibold shadow-lg hover:from-purple-600 hover:to-pink-600 transition">Sign up</a>
+        </div>
+      </nav>
 
+      {/* Main Hero Section (restored) */}
       <div className="w-full max-w-3xl mx-auto text-center px-4">
         <div className="flex flex-col items-center justify-center gap-2 mb-8">
-          <div className="flex items-center gap-3">
-            <Logo />
-            <span className="text-3xl font-bold text-gray-200">Verbatik</span>
-          </div>
           <p className="text-sm text-indigo-400 font-medium">Verbatim to Value.</p>
         </div>
 
-        <h1 className="text-4xl font-bold tracking-tighter bg-gradient-to-r from-purple-400 via-indigo-400 to-cyan-400 text-transparent bg-clip-text">
+        <h1 className="text-4xl font-bold tracking-tighter bg-gradient-to-r from-purple-400 via-indigo-400 to-cyan-400 text-transparent bg-clip-text mb-2">
           Stop Reading. Start Understanding.
         </h1>
 
@@ -145,7 +155,7 @@ export default function HomePage() {
           Paste raw user feedback, get a clear, actionable report in <span className="text-white">10 seconds.</span>
         </p>
 
-        <form onSubmit={handleSubmit} className="w-full mt-12 bg-gray-800/20 border border-gray-700/50 rounded-xl shadow-2xl p-2 transition-all duration-300 focus-within:ring-2 focus-within:ring-indigo-500 backdrop-blur-md">
+        <form onSubmit={handleSubmit} className="w-full mt-8 bg-gray-800/20 border border-gray-700/50 rounded-xl shadow-2xl p-2 transition-all duration-300 focus-within:ring-2 focus-within:ring-indigo-500 backdrop-blur-md">
           <div className="relative">
             <textarea
               id="feedback-text"
@@ -162,9 +172,12 @@ export default function HomePage() {
               <button type="button" title="Attach file (coming soon)" className="group p-2 text-gray-500 rounded-full hover:bg-gray-700/50 transition-colors cursor-not-allowed opacity-50">
                 <PaperclipIcon />
               </button>
+              <button type="button" className="ml-2 px-4 py-1 rounded-lg bg-gradient-to-r from-purple-500 to-pink-500 text-white font-semibold shadow hover:from-purple-600 hover:to-pink-600 transition text-sm">
+                Use Clipper
+              </button>
             </div>
             <div className="flex items-center space-x-4">
-              <span className={`text-sm font-medium ${wordCount > WORD_LIMIT ? 'text-red-500' : 'text-gray-400'}`}>
+              <span className={`text-sm font-medium ${wordCount > WORD_LIMIT ? 'text-red-500' : 'text-gray-400'}`}> 
                 {wordCount} / {WORD_LIMIT} words
               </span>
               <small className="block text-xs text-gray-500 mt-1">
@@ -211,7 +224,6 @@ export default function HomePage() {
             <p className="text-lg font-semibold text-gray-200">Trusted by Product Managers at leading startups.</p>
           </div>
         </div>
-
       </div>
     </div >
   );
